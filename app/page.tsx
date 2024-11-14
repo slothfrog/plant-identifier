@@ -1,101 +1,171 @@
-import Image from "next/image";
+'use client'
+
+import { useState } from 'react'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import { Upload } from 'lucide-react'
+import { PlantData } from './types'
+import Image from 'next/image'
+
+const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY as string)
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null)
+  const [result, setResult] = useState<PlantData | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImage(file)
+      setPreview(URL.createObjectURL(file))
+      identifyPlant(file)
+    }
+  }
+
+  const identifyPlant = async (file: File) => {
+    try {
+      setLoading(true)
+      
+      const imageData = await file.arrayBuffer()
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+      
+      // Updated prompt to request clean JSON without markdown formatting
+      const prompt = `Analyze this plant image and return a JSON object with the following properties:
+      {
+        "commonName": "plant common name",
+        "scientificName": "plant scientific name",
+        "care": {
+          "water": "watering instructions",
+          "sunlight": "sunlight requirements",
+          "soil": "soil preferences"
+        },
+        "facts": "interesting facts about the plant"
+      }
+      Respond only with the JSON object, no additional text or formatting.`;
+      
+      const base64Data = Buffer.from(imageData).toString('base64')
+      
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: file.type
+          }
+        }
+      ])
+      const response = await result.response
+      const text = response.text()
+      
+      // Clean the response text before parsing
+      const cleanedText = text.replace(/```json|```/g, '').trim()
+      
+      try {
+        const plantData: PlantData = JSON.parse(cleanedText)
+        setResult(plantData)
+      } catch (parseError) {
+        console.error('Error parsing JSON:', parseError)
+        throw new Error('Invalid response format from API')
+      }
+      
+    } catch (error) {
+      console.error('Error identifying plant:', error)
+      setResult({ 
+        commonName: '',
+        scientificName: '',
+        care: { water: '', sunlight: '', soil: '' },
+        facts: '',
+        error: 'Failed to identify plant. Please try again.' 
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-6">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-8 text-emerald-800">Plant Identifier</h1>
+        
+        {/* Upload Section */}
+        <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+          <div className="flex flex-col items-center justify-center">
+            <label 
+              className="w-full max-w-md h-64 flex flex-col items-center justify-center border-2 border-dashed border-emerald-300 rounded-lg cursor-pointer hover:bg-emerald-50 transition-colors"
+            >
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+              <Upload className="w-12 h-12 text-emerald-500 mb-2" />
+              <p className="text-sm text-gray-600">Upload a plant image to identify</p>
+            </label>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+
+        {/* Preview and Results Section */}
+        {preview && (
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Image Preview */}
+              <div>
+                <h2 className="text-xl font-semibold mb-4 text-emerald-800">Uploaded Image</h2>
+                {/* Fixed third error: Using Next.js Image component */}
+                <Image
+                  src={preview}
+                  alt="Plant preview"
+                  width={400}
+                  height={300}
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              </div>
+
+              {/* Results */}
+              <div>
+                <h2 className="text-xl font-semibold mb-4 text-emerald-800">Plant Information</h2>
+                {loading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+                  </div>
+                ) : result ? (
+                  <div className="space-y-4">
+                    {result.error ? (
+                      <p className="text-red-500">{result.error}</p>
+                    ) : (
+                      <>
+                        <div>
+                          <h3 className="font-medium text-emerald-700">Common Name</h3>
+                          <p>{result.commonName}</p>
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-emerald-700">Scientific Name</h3>
+                          <p className="italic">{result.scientificName}</p>
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-emerald-700">Care Instructions</h3>
+                          <ul className="list-disc list-inside space-y-1">
+                            <li>Water: {result.care.water}</li>
+                            <li>Sunlight: {result.care.sunlight}</li>
+                            <li>Soil: {result.care.soil}</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-emerald-700">Interesting Facts</h3>
+                          <p>{result.facts}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  )
 }
