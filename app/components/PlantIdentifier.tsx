@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Upload } from 'lucide-react'
+import { Upload, Camera, Leaf, Info, Droplet, Sun } from 'lucide-react'
 import Image from 'next/image'
 import { PlantData } from '@/types'
 import { GoogleGenerativeAI } from '@google/generative-ai'
@@ -162,6 +162,75 @@ export default function PlantIdentifier() {
           </div>
         </div>
       )}
+
+      
+      {/* How It Works Section */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-bold text-center mb-8 text-emerald-800">How It Works</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-emerald-900 rounded-xl p-6 text-white hover:transform hover:scale-105 transition-transform">
+            <div className="flex justify-center mb-4">
+              <Camera className="w-8 h-8 text-lime-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-center mb-2">Take a Photo</h3>
+            <p className="text-sm text-center text-emerald-200">
+              Upload a clear photo of your plant. Best results come from well-lit images showing leaves and flowers.
+            </p>
+          </div>
+
+          <div className="bg-emerald-900 rounded-xl p-6 text-white hover:transform hover:scale-105 transition-transform">
+            <div className="flex justify-center mb-4">
+              <Leaf className="w-8 h-8 text-lime-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-center mb-2">Get Identification</h3>
+            <p className="text-sm text-center text-emerald-200">
+              Our AI instantly identifies your plant and provides its common and scientific names.
+            </p>
+          </div>
+
+          <div className="bg-emerald-900 rounded-xl p-6 text-white hover:transform hover:scale-105 transition-transform">
+            <div className="flex justify-center mb-4">
+              <Info className="w-8 h-8 text-lime-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-center mb-2">Learn Care Tips</h3>
+            <p className="text-sm text-center text-emerald-200">
+              Receive detailed care instructions and interesting facts about your plant.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <div className="bg-emerald-900 rounded-xl p-6 text-white hover:transform hover:scale-105 transition-transform">
+            <div className="flex justify-center mb-4">
+              <Droplet className="w-8 h-8 text-lime-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-center mb-2">Watering Guide</h3>
+            <p className="text-sm text-center text-emerald-200">
+              Get specific watering instructions tailored to your plant&apos;s needs.
+            </p>
+          </div>
+
+          <div className="bg-emerald-900 rounded-xl p-6 text-white hover:transform hover:scale-105 transition-transform">
+            <div className="flex justify-center mb-4">
+              <Sun className="w-8 h-8 text-lime-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-center mb-2">Light Requirements</h3>
+            <p className="text-sm text-center text-emerald-200">
+              Learn about optimal light conditions for healthy growth.
+            </p>
+          </div>
+
+          <div className="bg-emerald-900 rounded-xl p-6 text-white hover:transform hover:scale-105 transition-transform">
+            <div className="flex justify-center mb-4">
+              <Info className="w-8 h-8 text-lime-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-center mb-2">Fun Facts</h3>
+            <p className="text-sm text-center text-emerald-200">
+              Discover interesting facts and history about your plant.
+            </p>
+          </div>
+        </div>
+      </div>
       
     </div>
   )
