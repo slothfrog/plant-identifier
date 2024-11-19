@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plant Identifier 🌿
 
-## Getting Started
+## Overview
+Plant Identifier is a web application built with Next.js and React that uses Google's Gemini AI to help users identify plants through image recognition and provide detailed care instructions.
 
-First, run the development server:
+## Features
+- 📸 Image Upload: Upload a plant image from your device
+- 📷 Camera Capture: Take a photo directly in the browser
+- 🤖 AI-Powered Identification: Instantly identify plant species
+- 🌱 Comprehensive Plant Information:
+  - Common and scientific names
+  - Care instructions (water, sunlight, soil)
+  - Interesting plant facts
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Screenshots
+### How It Works
+![How It Works Screenshot](screenshots/how-it-works.png)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Image Upload
+![Image Upload Screenshot](screenshots/image-upload.png)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Camera Capture
+![Camera Capture Screenshot](screenshots/camera-capture.png)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Plant Identification Result
+![Plant Result Screenshot](screenshots/plant-result.png)
 
-## Learn More
+## Prerequisites
+- Node.js (v18+)
+- npm or yarn
+- Google Gemini API Key
 
-To learn more about Next.js, take a look at the following resources:
+## Installation
+1. Clone the repository
+   ```bash
+   git clone https://github.com/yourusername/plant-identifier.git
+   cd plant-identifier
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Install dependencies
+   ```bash
+   npm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Create a `.env.local` file and add your Gemini API key
+   ```
+   NEXT_PUBLIC_GEMINI_API_KEY=your_api_key_here
+   ```
 
-## Deploy on Vercel
+4. Run the development server
+   ```bash
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Technologies Used
+- Next.js 14
+- React
+- Google Gemini AI
+- Tailwind CSS
+- TypeScript
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Environment Variables
+- `NEXT_PUBLIC_GEMINI_API_KEY`: Required for plant identification
+
+## Contributing
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+Distributed under the MIT License. See `LICENSE` for more information.
