@@ -1,7 +1,6 @@
-// components/PlantIdentifier.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Upload, Camera, Leaf, Info, Droplet, Sun } from 'lucide-react'
 import Image from 'next/image'
 import { PlantData } from '@/types'
@@ -10,11 +9,111 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY as string)
 
 export default function PlantIdentifier() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [image, setImage] = useState<File | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [image, setImage] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [result, setResult] = useState<PlantData | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
+  const [isInitializing, setIsInitializing] = useState<boolean>(false)
+  const [isCamera, setIsCamera] = useState<boolean>(false)
+  const [error, setError] = useState<string>('')
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+
+  // Effect for camera initialization
+  useEffect(() => {
+    if (isInitializing && videoRef.current) {
+      const initializeCamera = async () => {
+        try {
+          const constraints = {
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              facingMode: 'environment'
+            },
+            audio: false
+          }
+
+          const stream = await navigator.mediaDevices.getUserMedia(constraints)
+          streamRef.current = stream
+          if(videoRef.current) {
+            videoRef.current.srcObject = stream
+            await videoRef.current.play()
+            setIsCamera(true)
+            setIsInitializing(false)
+            setError('')
+          }
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+          setError(`Error accessing camera: ${errorMessage}`)
+          console.error('Camera error:', err)
+          
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop())
+            streamRef.current = null
+          }
+          setIsInitializing(false)
+        }
+      }
+
+      initializeCamera()
+    }
+  }, [isInitializing])
+
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [])
+
+  const startCamera = () => {
+    setError('')
+    setIsInitializing(true)
+  }
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+    setIsCamera(false)
+  }
+
+  const captureImage = () => {
+    if (!videoRef.current) {
+      setError('Video element not found')
+      return
+    }
+
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = videoRef.current.videoWidth
+      canvas.height = videoRef.current.videoHeight
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0)
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], 'captured-image.jpg', { type: 'image/jpeg' })
+            setImage(file)
+            setPreview(URL.createObjectURL(blob))
+            identifyPlant(file)
+            stopCamera()
+          }
+        }, 'image/jpeg')
+      }
+    } catch (err) {
+      setError('Error capturing photo')
+      console.error('Capture error:', err)
+    }
+  }
+
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -87,21 +186,71 @@ export default function PlantIdentifier() {
     <div className="max-w-4xl mx-auto">
       <h1 className="text-4xl font-bold text-center mb-8 text-emerald-800">Plant Identifier</h1>
       
-      {/* Upload Section */}
+      {/* Upload/Camera Section */}
       <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
         <div className="flex flex-col items-center justify-center">
-          <label 
-            className="w-full max-w-md h-64 flex flex-col items-center justify-center border-2 border-dashed border-emerald-300 rounded-lg cursor-pointer hover:bg-emerald-50 transition-colors"
-          >
-            <input
-              type="file"
-              className="hidden"
-              accept="image/*"
-              onChange={handleImageUpload}
+          {/* Always render video element but hide it when not in use */}
+          <div className={`relative w-full max-w-md ${!isCamera ? 'hidden' : ''}`}>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full h-64 object-cover rounded-lg"
             />
-            <Upload className="w-12 h-12 text-emerald-500 mb-2" />
-            <p className="text-sm text-gray-600">Upload a plant image to identify</p>
-          </label>
+            <div className="mt-4 flex justify-center gap-4">
+              <button
+                onClick={captureImage}
+                className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+              >
+                Capture Photo
+              </button>
+              <button
+                onClick={stopCamera}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+
+          {/* Show error if any */}
+          {error && (
+            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
+          {/* Show loading state during initialization */}
+          {isInitializing && (
+            <div className="w-full max-w-md flex items-center justify-center p-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+              <span className="ml-2">Initializing camera...</span>
+            </div>
+          )}
+
+          {/* Show upload options when camera is not active */}
+          {!isCamera && !isInitializing && (
+            <div className="w-full max-w-md space-y-4">
+              <label className="w-full h-64 flex flex-col items-center justify-center border-2 border-dashed border-emerald-300 rounded-lg cursor-pointer hover:bg-emerald-50 transition-colors">
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+                <Upload className="w-12 h-12 text-emerald-500 mb-2" />
+                <p className="text-sm text-gray-600">Upload a plant image to identify</p>
+              </label>
+              
+              <button
+                onClick={startCamera}
+                className="w-full py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2"
+              >
+                <Camera className="w-5 h-5" />
+                Take Photo
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
